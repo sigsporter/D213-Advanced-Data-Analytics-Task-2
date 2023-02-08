@@ -18,7 +18,7 @@ from keras.preprocessing.text import Tokenizer, one_hot
 from keras.utils import pad_sequences
 from sklearn.model_selection import train_test_split
 from keras import Sequential
-from keras.layers import Embedding, SpatialDropout1D, Dense, LSTM, Dropout
+from keras.layers import Embedding, SpatialDropout1D, Dense, LSTM, Dropout, Flatten
 
 colnames = ['review', 'rating']
 yelp = pd.read_csv('C:\\WGU\\D213 Advanced Data Analytics\\Task 2\\yelp_labelled.txt',
@@ -50,52 +50,81 @@ df['review'] = df['review'].str.lower()
 
 # print("New count of reviews with non-English characters: ", isEnglish(df['review']), '\n')
 
-stopwords = set(stopwords.words('english'))
-df['no_stop'] = df['review'].apply(lambda x: ' '.join([word for word in x.split() if word not in stopwords]))
-print(df['no_stop'].head(10), '\n')
+# stopwords = set(stopwords.words('english'))
+# df['no_stop'] = df['review'].apply(lambda x: ' '.join([word for word in x.split() if word not in stopwords]))
+# print(df['no_stop'].head(10), '\n')
 
 cleaned = RegexpTokenizer('\w+')
-df['tok'] = df['no_stop'].apply(cleaned.tokenize)
+df['tok'] = df['review'].apply(cleaned.tokenize)
 print(df['tok'].head(10), '\n')
 
-wordnet_lemmatizer = WordNetLemmatizer()
-def lemmatizer(text):
-    lemm_text = [wordnet_lemmatizer.lemmatize(word) for word in text]
-    return lemm_text
-
-df['lem'] = df['tok'].apply(lambda x: lemmatizer(x))
-print("Stopwords Removed & Lemmatized")
-print(df['lem'].head(10), '\n')
+# wordnet_lemmatizer = WordNetLemmatizer()
+# def lemmatizer(text):
+#     lemm_text = [wordnet_lemmatizer.lemmatize(word) for word in text]
+#     return lemm_text
+#
+# df['lem'] = df['tok'].apply(lambda x: lemmatizer(x))
+# print("Lemmatized")
+# print(df['lem'].head(10), '\n')
 
 # Borrowed Code Author: Usman Malik
 # URL: https://stackabuse.com/python-for-nlp-word-embeddings-for-deep-learning-in-keras/
 all_words = []
-for x in df['lem']:
+for x in df['tok']:
     for i in x:
         all_words.append(i)
 
 unique_words = set(all_words)
-print("Count of unique words:", len(unique_words))
+max_words = len(unique_words)
+print("Count of unique words:", max_words)
 # End borrowed code
 
 longest_review = 0
-for x in df['lem']:
+for x in df['tok']:
     if len(x) > longest_review:
         longest_review = len(x)
 
 print("The review with the most words has", longest_review, "words.\n")
 
 # padding & vectorizing
-tokenizer = Tokenizer(num_words=len(unique_words))
-tokenizer.fit_on_texts(df['lem'])
-seq = tokenizer.texts_to_sequences(df['lem'])
+tokenizer = Tokenizer(num_words=max_words)
+tokenizer.fit_on_texts(df['tok'])
+seq = tokenizer.texts_to_sequences(df['tok'])
 print("Embedded sentences:")
 print(seq[0:10], '\n')
-review_vectors = pad_sequences(seq, padding='post', maxlen=700)
+review_vectors = pad_sequences(seq, padding='post', maxlen=longest_review)
 print("Padded sentences:")
 print(review_vectors[0:10], '\n')
 
-# modeling
+# Train/Test Split
+ratings = list(df['rating'])
+
+reviews_train, reviews_test, ratings_train, ratings_test = train_test_split(review_vectors, ratings, test_size=0.2,
+                                                                            random_state=22)
+
+print("Reviews Train:\n", reviews_train[0:10])
+print("Reviews Test:\n", reviews_test[0:10])
+print("Ratings Train:\n", ratings_train[0:10])
+print("Ratings Test:\n", ratings_test[0:10])
+
+# np.savetxt('C:\\WGU\\D213 Advanced Data Analytics\\Task 2\\review_vextors_2.csv', review_vectors, delimiter=', ', fmt='% s')
+# np.savetxt('C:\\WGU\\D213 Advanced Data Analytics\\Task 2\\ratings_2.csv', ratings, delimiter=', ', fmt='% s')
+
+# Model
+embedding_vector_length = 32
+model = Sequential()
+model.add(Embedding(input_dim=max_words, output_dim=embedding_vector_length, input_length=longest_review))
+# model.add(SpatialDropout1D(0.2))
+model.add(LSTM(units=128))
+# model.add(Dropout(0.2))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+print(model.summary())
+
+# loss1, acc1, mse1 =
+print(model.evaluate(reviews_test, np.array(ratings_test)))
+# history = model.fit(reviews_train, np.array(ratings_train), validation_split=0.2, epochs=5, batch_size=32,
+#                     validation_data=(reviews_test, np.array(ratings_test)))
 
 
 '''
