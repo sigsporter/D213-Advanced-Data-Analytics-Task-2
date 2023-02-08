@@ -14,7 +14,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from wordcloud import WordCloud
-from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import Tokenizer, one_hot
 from keras.utils import pad_sequences
 from sklearn.model_selection import train_test_split
 from keras import Sequential
@@ -29,7 +29,7 @@ amzn = pd.read_csv('C:\\WGU\\D213 Advanced Data Analytics\\Task 2\\amazon_cells_
                    sep='\t', header=None, names=colnames)
 
 df = pd.concat((yelp, imdb, amzn), ignore_index=True)
-pd.set_option('max_colwidth', 30)
+pd.set_option('max_colwidth', 50)
 pd.set_option('display.max_columns', 10)
 
 print(df.info())
@@ -46,6 +46,7 @@ def isEnglish(dataframe):
 
 df['review'] = df['review'].apply(lambda x: ''.join(char for char in x if ord(char) < 128))
 df['review'] = df['review'].apply(lambda x: re.sub(r'[^a-zA-Z\s]', '', x))
+df['review'] = df['review'].str.lower()
 
 # print("New count of reviews with non-English characters: ", isEnglish(df['review']), '\n')
 
@@ -53,25 +54,49 @@ stopwords = set(stopwords.words('english'))
 df['no_stop'] = df['review'].apply(lambda x: ' '.join([word for word in x.split() if word not in stopwords]))
 print(df['no_stop'].head(10), '\n')
 
+cleaned = RegexpTokenizer('\w+')
+df['tok'] = df['no_stop'].apply(cleaned.tokenize)
+print(df['tok'].head(10), '\n')
+
+wordnet_lemmatizer = WordNetLemmatizer()
+def lemmatizer(text):
+    lemm_text = [wordnet_lemmatizer.lemmatize(word) for word in text]
+    return lemm_text
+
+df['lem'] = df['tok'].apply(lambda x: lemmatizer(x))
+print("Stopwords Removed & Lemmatized")
+print(df['lem'].head(10), '\n')
 
 # Borrowed Code Author: Usman Malik
 # URL: https://stackabuse.com/python-for-nlp-word-embeddings-for-deep-learning-in-keras/
 all_words = []
-for x in df['no_stop']:
-    tokenize_word = word_tokenize(x)
-    for word in tokenize_word:
-        all_words.append(word)
+for x in df['lem']:
+    for i in x:
+        all_words.append(i)
 
 unique_words = set(all_words)
-print("Count of unique words: ", len(unique_words))
+print("Count of unique words:", len(unique_words))
 # End borrowed code
 
 longest_review = 0
-for x in df['no_stop']:
+for x in df['lem']:
     if len(x) > longest_review:
         longest_review = len(x)
 
-print(longest_review)
+print("The review with the most words has", longest_review, "words.\n")
+
+# padding & vectorizing
+tokenizer = Tokenizer(num_words=len(unique_words))
+tokenizer.fit_on_texts(df['lem'])
+seq = tokenizer.texts_to_sequences(df['lem'])
+print("Embedded sentences:")
+print(seq[0:10], '\n')
+review_vectors = pad_sequences(seq, padding='post', maxlen=700)
+print("Padded sentences:")
+print(review_vectors[0:10], '\n')
+
+# modeling
+
 
 '''
 df['word_count'] = [len(x.split()) for x in df['review']]
