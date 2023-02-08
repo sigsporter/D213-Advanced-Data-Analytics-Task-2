@@ -9,7 +9,7 @@ import re
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
@@ -34,12 +34,52 @@ pd.set_option('display.max_columns', 10)
 
 print(df.info())
 print(df.head(10), '\n')
+def isEnglish(dataframe):
+    notAsciiCount = 0
+    for x in dataframe:
+        if not x.isascii():
+            notAsciiCount += 1
+    return notAsciiCount
 
 
+# print("Count of reviews with non-English characters: ", isEnglish(df['review']), '\n')
+
+df['review'] = df['review'].apply(lambda x: ''.join(char for char in x if ord(char) < 128))
+df['review'] = df['review'].apply(lambda x: re.sub(r'[^a-zA-Z\s]', '', x))
+
+# print("New count of reviews with non-English characters: ", isEnglish(df['review']), '\n')
+
+stopwords = set(stopwords.words('english'))
+df['no_stop'] = df['review'].apply(lambda x: ' '.join([word for word in x.split() if word not in stopwords]))
+print(df['no_stop'].head(10), '\n')
+
+
+# Borrowed Code Author: Usman Malik
+# URL: https://stackabuse.com/python-for-nlp-word-embeddings-for-deep-learning-in-keras/
+all_words = []
+for x in df['no_stop']:
+    tokenize_word = word_tokenize(x)
+    for word in tokenize_word:
+        all_words.append(word)
+
+unique_words = set(all_words)
+print("Count of unique words: ", len(unique_words))
+# End borrowed code
+
+longest_review = 0
+for x in df['no_stop']:
+    if len(x) > longest_review:
+        longest_review = len(x)
+
+print(longest_review)
+
+'''
 df['word_count'] = [len(x.split()) for x in df['review']]
 df['char_count'] = df['review'].apply(len)
 print(df)
 print(df['rating'].value_counts(), '\n')
+'''
+'''
 print("Max word count: ", max(len(x.split()) for x in df['review']), '\n')
 
 # Review Cleanup
@@ -124,3 +164,4 @@ print(model.evaluate(reviews_test, np.array(ratings_test)))
 # print(f"Loss is {loss1},\nAccuracy is {acc1*100},\nMSE is {mse1}")
 # history = model.fit(reviews_train, np.array(ratings_train), validation_split=0.2, epochs=5, batch_size=32, validation_data=(reviews_test, np.array(ratings_test)))
 
+'''
