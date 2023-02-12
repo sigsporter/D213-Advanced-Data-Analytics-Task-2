@@ -98,7 +98,7 @@ print("After dropping reviews of length 0:", df.shape, '\n')
 mean = round(np.mean(df['length']))
 
 
-# vectorizing & padding
+# tokenizing & padding
 tokenizer = Tokenizer(num_words=max_words)
 tokenizer.fit_on_texts(df['review'])
 seq = tokenizer.texts_to_sequences(df['review'])
@@ -135,15 +135,14 @@ embedding_vector_length = 32
 model = Sequential()
 model.add(Embedding(input_dim=max_words, output_dim=embedding_vector_length, input_length=mean))
 model.add(SpatialDropout1D(0.4))
-model.add(LSTM(units=128, dropout=0.2, recurrent_dropout=0.2))
+model.add(LSTM(units=64, dropout=0.2, recurrent_dropout=0.2))
 model.add(Dropout(0.2))
-model.add(Dense(64, activation='LeakyReLU'))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-print(model.summary())
+print(model.summary(), '\n')
 
 early_stopping_monitor = EarlyStopping(patience=3)
-history = model.fit(reviews_train, np.array(ratings_train), epochs=20, batch_size=128,
+history = model.fit(reviews_train, np.array(ratings_train), epochs=20, batch_size=32,
                     validation_data=(reviews_test, np.array(ratings_test)))
 
 # loss, acc =
