@@ -1,26 +1,19 @@
 # Imports
-import math
 import warnings
-
-from keras.callbacks import EarlyStopping
-
 warnings.filterwarnings('ignore')
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 import pandas as pd
 import re
-import nltk
 import matplotlib.pyplot as plt
 import numpy as np
 
+from keras.callbacks import EarlyStopping
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from textblob import Word
 from scipy import stats
-from nltk.tokenize import RegexpTokenizer
-from nltk.stem import WordNetLemmatizer
-from wordcloud import WordCloud
 from keras.preprocessing.text import Tokenizer, one_hot
 from keras.utils import pad_sequences
 from sklearn.model_selection import train_test_split
