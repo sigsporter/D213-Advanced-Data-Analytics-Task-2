@@ -14,11 +14,11 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from textblob import Word
 from scipy import stats
-from keras.preprocessing.text import Tokenizer, one_hot
+from keras.preprocessing.text import Tokenizer
 from keras.utils import pad_sequences
 from sklearn.model_selection import train_test_split
 from keras import Sequential
-from keras.layers import Embedding, SpatialDropout1D, Dense, LSTM, Dropout, Flatten
+from keras.layers import Embedding, SpatialDropout1D, Dense, LSTM, Dropout
 
 
 # Reading in the data & creating a single dataframe
