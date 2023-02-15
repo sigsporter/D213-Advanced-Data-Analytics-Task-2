@@ -49,7 +49,10 @@ def isEnglish(dataframe):
 
 print("Count of reviews with non-English characters: ", isEnglish(df['review']), '\n')
 
+# Borrowed code: Author - Borislav Hadzhiev
+# https://bobbyhadz.com/blog/python-remove-non-ascii-characters-from-string
 df['review'] = df['review'].apply(lambda x: ''.join(char for char in x if ord(char) < 128))
+# End borrowed code
 df['review'] = df['review'].apply(lambda x: re.sub(r'[^a-zA-Z\s]', '', x))
 df['review'] = df['review'].str.lower()
 
@@ -146,7 +149,9 @@ history = model.fit(reviews_train, np.array(ratings_train), epochs=20, batch_siz
                     validation_data=(reviews_test, np.array(ratings_test)))
 
 # loss, acc =
-print(model.evaluate(reviews_test, np.array(ratings_test)))
+metrics = model.evaluate(reviews_test, np.array(ratings_test))
+print("Loss:", metrics[0])
+print("Accuracy:", metrics[1])
 
 # Visualizing accuracy & loss
 epoch_range = range(1, 21)
@@ -156,8 +161,9 @@ plt.title("Model Accuracy")
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Val'], loc='upper left')
-plt.show()
 plt.savefig('model_accuracy_plot.png')
+plt.show()
+
 
 plt.plot(epoch_range, history.history['loss'])
 plt.plot(epoch_range, history.history['val_loss'])
@@ -165,5 +171,6 @@ plt.title("Model Loss")
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Loss', 'Val'], loc='upper left')
-plt.show()
 plt.savefig('model_loss_plot.png')
+plt.show()
+
